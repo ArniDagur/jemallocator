@@ -12564,7 +12564,13 @@ printf "%s\n" "#define JEMALLOC_PROF_LIBUNWIND  " >>confdefs.h
   fi
 fi
 
-if test `uname -s` = "Linux"
+# prof-frameptr is a Linux *target* feature. Honor $host so cross-compiles
+# from non-Linux build machines still enable it (uname -s is the build OS).
+case "${host}" in
+  *-linux*|*-Linux*) _je_linux_target=yes ;;
+  *) _je_linux_target=no ;;
+esac
+if test `uname -s` = "Linux" || test "x${_je_linux_target}" = "xyes"
 then
   # Check whether --enable-prof-frameptr was given.
 if test ${enable_prof_frameptr+y}

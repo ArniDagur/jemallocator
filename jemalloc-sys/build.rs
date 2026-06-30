@@ -284,6 +284,25 @@ fn main() {
         cmd.arg("--enable-prof");
     }
 
+    let profiling_libunwind = env::var("CARGO_FEATURE_PROFILING_LIBUNWIND").is_ok();
+    let profiling_frameptr = env::var("CARGO_FEATURE_PROFILING_FRAMEPTR").is_ok();
+    // jemalloc picks a single backtrace method at configure time, and libunwind
+    // wins over frameptr if both are enabled. We make them mutually exclusive to
+    // avoid confusion resulting from configuration priority.
+    if profiling_libunwind && profiling_frameptr {
+        panic!(
+            "features `profiling_libunwind` and `profiling_frameptr` are mutually              exclusive; enable only one heap-profiling backtrace method"
+        );
+    }
+
+    if profiling_frameptr {
+        if !target.contains("linux") {
+            panic!("feature `profiling_frameptr` is only supported on Linux targets");
+        }
+        info!("CARGO_FEATURE_PROFILING_FRAMEPTR set");
+        cmd.arg("--enable-prof-frameptr");
+    }
+
     if env::var("CARGO_FEATURE_STATS").is_ok() {
         info!("CARGO_FEATURE_STATS set");
         cmd.arg("--enable-stats");
