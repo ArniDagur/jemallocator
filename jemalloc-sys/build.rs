@@ -310,11 +310,24 @@ fn main() {
     if profiling_libunwind {
         info!("CARGO_FEATURE_PROFILING_LIBUNWIND set");
         cmd.arg("--enable-prof-libunwind");
+        // Optional full path for cross builds where `-lunwind` fails to resolve
+        // symbols (e.g. cargo-zigbuild). jemalloc accepts a shared object here.
+        if let Ok(path) = read_and_watch_env("JEMALLOC_SYS_WITH_STATIC_LIBUNWIND") {
+            info!("--with-static-libunwind={}", path);
+            cmd.arg(format!("--with-static-libunwind={path}"));
+        }
         // On Apple platforms unwind symbols live in libSystem, and on
         // Windows libunwind is not available. Everywhere else (Linux,
         // FreeBSD, etc.) we need to link it explicitly.
         if !target.contains("apple") && !target.contains("windows") {
             println!("cargo:rustc-link-lib=unwind");
+            if let Ok(dir) = env::var("JEMALLOC_LIBUNWIND_LIBDIR")
+                .or_else(|_| env::var("LIBRARY_PATH").map(|p| p.split(':').next().unwrap_or("").to_string()))
+            {
+                if !dir.is_empty() {
+                    println!("cargo:rustc-link-search=native={dir}");
+                }
+            }
         }
     }
 
