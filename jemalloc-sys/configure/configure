@@ -12636,8 +12636,8 @@ printf '%s\n' "#define JEMALLOC_PROF_LIBUNWIND  " >>confdefs.h
   fi
 fi
 
-case "${host_os}" in
-  linux*)
+if test `uname -s` = "Linux"
+then
   # Check whether --enable-prof-frameptr was given.
 if test ${enable_prof_frameptr+y}
 then :
@@ -12718,11 +12718,9 @@ printf '%s\n' "#define JEMALLOC_PROF_FRAME_POINTER  " >>confdefs.h
   else
     enable_prof_frameptr="0"
   fi
-  ;;
-  *)
+else
   enable_prof_frameptr="0"
-  ;;
-esac
+fi
 
 # Check whether --enable-prof-libgcc was given.
 if test ${enable_prof_libgcc+y}
