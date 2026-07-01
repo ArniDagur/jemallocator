@@ -320,13 +320,15 @@ fn main() {
         // Windows libunwind is not available. Everywhere else (Linux,
         // FreeBSD, etc.) we need to link it explicitly.
         if !target.contains("apple") && !target.contains("windows") {
-            println!("cargo:rustc-link-lib=unwind");
-            if let Ok(dir) = env::var("JEMALLOC_LIBUNWIND_LIBDIR")
-                .or_else(|_| env::var("LIBRARY_PATH").map(|p| p.split(':').next().unwrap_or("").to_string()))
-            {
-                if !dir.is_empty() {
-                    println!("cargo:rustc-link-search=native={dir}");
-                }
+            // Prefer an explicit ELF path: zig's `-lunwind` often fails to pull
+            // symbols from a staged sysroot even with -L (cross builds).
+            if let Ok(path) = env::var("JEMALLOC_SYS_WITH_STATIC_LIBUNWIND") {
+                println!("cargo:rustc-link-arg={path}");
+            } else if let Ok(dir) = env::var("JEMALLOC_LIBUNWIND_LIBDIR") {
+                println!("cargo:rustc-link-search=native={dir}");
+                println!("cargo:rustc-link-lib=dylib=unwind");
+            } else {
+                println!("cargo:rustc-link-lib=unwind");
             }
         }
     }
